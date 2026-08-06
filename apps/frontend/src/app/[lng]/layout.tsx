@@ -3,6 +3,7 @@ import { Geist } from 'next/font/google';
 import type { PropsWithChildren } from 'react';
 
 import { Providers } from '@/app/providers';
+import { APP_NAME } from '@/config/constants';
 import { getTranslations } from '@/core/i18n/get-translations';
 import { getSafeLng, LANGUAGES } from '@/core/i18n/language';
 
@@ -15,8 +16,8 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: 'Next.js Starter Template',
-  description: 'A lean Next.js App Router + TypeScript starter.',
+  title: APP_NAME,
+  description: 'Track job applications and keep your job search organized.',
 };
 
 export const generateStaticParams = () => LANGUAGES.map((lng) => ({ lng }));
