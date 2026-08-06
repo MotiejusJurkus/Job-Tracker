@@ -22,16 +22,32 @@ Install dependencies from the repository root:
 pnpm install
 ```
 
-Run the backend:
+Create the local environment files:
+
+```bash
+cp apps/backend/.env.example apps/backend/.env
+cp apps/frontend/.env.example apps/frontend/.env.local
+```
+
+Run both applications in one terminal:
+
+```bash
+pnpm dev
+```
+
+The frontend runs at <http://localhost:3000/en> and the backend health endpoint is at <http://localhost:3001/health>.
+
+Alternatively, run them in separate terminals:
 
 ```bash
 pnpm dev:backend
-```
-
-Once the frontend template is added, run it with:
-
-```bash
 pnpm dev:frontend
 ```
 
-When adding the frontend template, copy or clone its files into `apps/frontend` and remove its nested `.git` directory so Git tracks the entire monorepo as one repository.
+Run all formatting, linting, type, test, and production-build checks:
+
+```bash
+pnpm run check
+```
+
+Local environment files are ignored by Git.

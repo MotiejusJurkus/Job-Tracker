@@ -22,7 +22,7 @@ after(async () => {
   });
 });
 
-test("GET /health returns a healthy response", async () => {
+void test("GET /health returns a healthy response", async () => {
   const response = await fetch(`${baseUrl}/health`);
   const body: unknown = await response.json();
 

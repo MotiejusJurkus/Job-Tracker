@@ -1,8 +1,6 @@
-# Next.js Starter Template
+# Job tracker frontend
 
-A lean, opinionated **Next.js (App Router) + TypeScript** starter. It ships the tooling,
-configs, and conventions of a production app — with all domain code stripped out — so you can
-seed brand-new projects that typecheck, lint, and run out of the box.
+The **Next.js App Router + TypeScript** frontend for the job tracker.
 
 ## Stack
 
@@ -25,7 +23,7 @@ seed brand-new projects that typecheck, lint, and run out of the box.
 ```bash
 cp .env.example .env   # then fill in values
 pnpm install
-pnpm dev               # http://localhost:3000  (redirects to /en)
+pnpm dev               # frontend: http://localhost:3000/en
 ```
 
 ## Scripts
