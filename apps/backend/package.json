@@ -7,6 +7,11 @@
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
+    "db:check": "tsx src/db/check-connection.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "db:verify": "tsx src/db/verify-schema.ts",
     "dev": "tsx watch src/server.ts",
     "lint": "eslint .",
     "start": "node dist/server.js",
@@ -17,12 +22,17 @@
     "node": ">=20.9"
   },
   "dependencies": {
-    "express": "^5.1.0"
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
+    "express": "^5.1.0",
+    "postgres": "^3.4.9",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@types/express": "^5.0.6",
     "@types/node": "^20.19.0",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9.39.4",
     "tsx": "^4.23.5",
     "typescript": "^5.9.3",

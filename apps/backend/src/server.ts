@@ -1,8 +1,14 @@
+import 'dotenv/config';
+
 import { app } from "./app.js";
-import { getPort } from "./config.js";
+import { getConfig } from "./config.js";
+import { createDatabase } from './db/client.js';
 
-const port = getPort(process.env.PORT);
+const config = getConfig(process.env);
+const { checkConnection } = createDatabase(config.databaseUrl);
 
-app.listen(port, () => {
-  console.log(`API is running at http://localhost:${port}`);
+await checkConnection();
+
+app.listen(config.port, () => {
+  console.log(`API is running at http://localhost:${config.port}`);
 });
