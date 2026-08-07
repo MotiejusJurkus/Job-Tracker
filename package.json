@@ -6,6 +6,11 @@
   "scripts": {
     "build": "pnpm -r --if-present run build",
     "check": "pnpm lint && pnpm typelint && pnpm test && pnpm build",
+    "db:check": "pnpm --filter @job-tracker/backend db:check",
+    "db:generate": "pnpm --filter @job-tracker/backend db:generate",
+    "db:migrate": "pnpm --filter @job-tracker/backend db:migrate",
+    "db:studio": "pnpm --filter @job-tracker/backend db:studio",
+    "db:verify": "pnpm --filter @job-tracker/backend db:verify",
     "dev": "pnpm --parallel --filter @job-tracker/backend --filter @job-tracker/frontend run dev",
     "dev:backend": "pnpm --filter @job-tracker/backend dev",
     "dev:frontend": "pnpm --filter ./apps/frontend dev",

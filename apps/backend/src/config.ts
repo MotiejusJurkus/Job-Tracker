@@ -2,6 +2,11 @@ const DEFAULT_PORT = 3001;
 const MIN_PORT = 1;
 const MAX_PORT = 65_535;
 
+type Config = {
+  databaseUrl: string;
+  port: number;
+};
+
 export const getPort = (value: string | undefined): number => {
   if (value === undefined || value.trim() === '') {
     return DEFAULT_PORT;
@@ -15,3 +20,28 @@ export const getPort = (value: string | undefined): number => {
 
   return port;
 };
+
+export const getDatabaseUrl = (value: string | undefined): string => {
+  if (value === undefined || value.trim() === '') {
+    throw new Error('DATABASE_URL is required');
+  }
+
+  let databaseUrl: URL;
+
+  try {
+    databaseUrl = new URL(value);
+  } catch {
+    throw new Error('DATABASE_URL must be a valid PostgreSQL connection URL');
+  }
+
+  if (databaseUrl.protocol !== 'postgres:' && databaseUrl.protocol !== 'postgresql:') {
+    throw new Error('DATABASE_URL must use the postgres or postgresql protocol');
+  }
+
+  return value;
+};
+
+export const getConfig = (environment: NodeJS.ProcessEnv): Config => ({
+  databaseUrl: getDatabaseUrl(environment.DATABASE_URL),
+  port: getPort(environment.PORT),
+});
