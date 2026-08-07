@@ -7,7 +7,6 @@ import { APP_NAME } from '@/config/constants';
 import { getTranslations } from '@/core/i18n/get-translations';
 import { getSafeLng, LANGUAGES } from '@/core/i18n/language';
 
-import 'react-toastify/dist/ReactToastify.css';
 import '../globals.css';
 
 const geistSans = Geist({

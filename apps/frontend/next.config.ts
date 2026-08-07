@@ -5,6 +5,14 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: 'standalone',
 
+  rewrites: () =>
+    Promise.resolve([
+      {
+        source: '/api/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL}/:path*`,
+      },
+    ]),
+
   turbopack: {
     rules: {
       '*.svg': {
@@ -18,16 +26,8 @@ const nextConfig: NextConfig = {
       },
     },
   },
-
-  images: {
-    remotePatterns: [
-      // Add per-project remote image hosts here
-    ],
-  },
 };
 
-// Optionally wrap with Sentry only when a DSN is configured, so the template
-// runs cleanly without any Sentry setup. Enable by setting NEXT_PUBLIC_SENTRY_DSN.
 const buildConfig = async (): Promise<NextConfig> => {
   if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
     return nextConfig;
