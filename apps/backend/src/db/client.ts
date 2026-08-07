@@ -31,3 +31,5 @@ export const createDatabase = (databaseUrl: string) => {
     closeConnection,
   };
 };
+
+export type Database = ReturnType<typeof createDatabase>['database'];
