@@ -1,6 +1,7 @@
 import express from "express";
 
 import { createAuthRouter, type Login } from './features/auth/auth.js';
+import type { Logout } from './features/auth/logout.js';
 import type { AuthenticateSession } from './features/auth/require-auth.js';
 import { createUsersRouter, type CreateUser } from './features/users/users.js';
 
@@ -9,6 +10,7 @@ type Props = {
   createUser?: CreateUser;
   isSecureCookie?: boolean;
   login?: Login;
+  logout?: Logout;
 };
 
 export const createApp = ({
@@ -16,6 +18,7 @@ export const createApp = ({
   createUser,
   isSecureCookie,
   login,
+  logout,
 }: Props = {}) => {
   const app = express();
 
@@ -32,10 +35,14 @@ export const createApp = ({
     app.use('/users', createUsersRouter(createUser));
   }
 
-  if (login !== undefined || authenticateSession !== undefined) {
+  if (
+    login !== undefined ||
+    authenticateSession !== undefined ||
+    logout !== undefined
+  ) {
     app.use(
       '/auth',
-      createAuthRouter(login, authenticateSession, { isSecureCookie }),
+      createAuthRouter(login, authenticateSession, logout, { isSecureCookie }),
     );
   }
 

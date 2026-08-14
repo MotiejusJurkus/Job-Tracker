@@ -5,9 +5,11 @@ import { z } from 'zod';
 import type { Database } from '../../db/client.js';
 import { sessions, users } from '../../db/schema.js';
 import { verifyPassword } from '../users/password.js';
+import type { Logout } from './logout.js';
 import {
   type AuthenticateSession,
   createRequireAuth,
+  readSessionToken,
 } from './require-auth.js';
 import {
   createSessionCredentials,
@@ -84,6 +86,7 @@ export const createDatabaseLogin =
 export const createAuthRouter = (
   login: Login | undefined,
   authenticateSession: AuthenticateSession | undefined,
+  logout: Logout | undefined,
   { isSecureCookie = false }: RouterOptions = {},
 ): Router => {
   const router = Router();
@@ -136,6 +139,30 @@ export const createAuthRouter = (
         response.status(200).json({ user });
       },
     );
+  }
+
+  if (logout !== undefined) {
+    router.post('/logout', async (request, response) => {
+      response.set('Cache-Control', 'no-store');
+
+      const token = readSessionToken(request.headers.cookie);
+
+      try {
+        if (token !== undefined) {
+          await logout(token);
+        }
+
+        response.clearCookie(SESSION_COOKIE_NAME, {
+          httpOnly: true,
+          path: '/',
+          sameSite: 'lax',
+          secure: isSecureCookie,
+        });
+        response.status(204).end();
+      } catch {
+        response.status(500).json({ error: 'Unable to log out' });
+      }
+    });
   }
 
   return router;

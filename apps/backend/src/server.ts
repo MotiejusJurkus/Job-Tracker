@@ -4,6 +4,7 @@ import { createApp } from "./app.js";
 import { getConfig } from "./config.js";
 import { createDatabase } from './db/client.js';
 import { createDatabaseLogin } from './features/auth/auth.js';
+import { createDatabaseLogout } from './features/auth/logout.js';
 import { createDatabaseAuthenticateSession } from './features/auth/require-auth.js';
 import { createDatabaseUser } from './features/users/users.js';
 
@@ -17,6 +18,7 @@ const app = createApp({
   createUser: (input) => createDatabaseUser(database, input),
   isSecureCookie: process.env.NODE_ENV === 'production',
   login: createDatabaseLogin(database),
+  logout: createDatabaseLogout(database),
 });
 
 app.listen(config.port, () => {

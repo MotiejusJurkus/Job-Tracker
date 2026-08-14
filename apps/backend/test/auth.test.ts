@@ -11,6 +11,7 @@ let server: ReturnType<ReturnType<typeof createApp>['listen']>;
 let baseUrl: string;
 let receivedPassword: string | undefined;
 let receivedSessionToken: string | undefined;
+let revokedSessionToken: string | undefined;
 
 const login: Login = (input) => {
   receivedPassword = input.password;
@@ -37,6 +38,10 @@ before(async () => {
     },
     isSecureCookie: true,
     login,
+    logout: (token) => {
+      revokedSessionToken = token;
+      return Promise.resolve();
+    },
   });
 
   await new Promise<void>((resolve) => {
@@ -121,6 +126,48 @@ void test('GET /auth/session rejects an unknown session', async () => {
   invalidServer.close();
   assert.equal(response.status, 401);
   assert.deepEqual(await response.json(), { error: 'Authentication required' });
+});
+
+void test('POST /auth/logout revokes the session and clears its cookie', async () => {
+  const response = await fetch(`${baseUrl}/auth/logout`, {
+    method: 'POST',
+    headers: { cookie: `session=${SESSION_TOKEN}` },
+  });
+  const cookie = response.headers.get('set-cookie');
+
+  assert.equal(response.status, 204);
+  assert.equal(await response.text(), '');
+  assert.equal(revokedSessionToken, SESSION_TOKEN);
+  assert.match(cookie ?? '', /^session=;/);
+  assert.match(cookie ?? '', /Expires=Thu, 01 Jan 1970 00:00:00 GMT/);
+  assert.match(cookie ?? '', /HttpOnly/);
+  assert.match(cookie ?? '', /Secure/);
+  assert.match(cookie ?? '', /SameSite=Lax/);
+  assert.match(cookie ?? '', /Path=\//);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+});
+
+void test('POST /auth/logout is idempotent without a session cookie', async () => {
+  let logoutCalls = 0;
+  const app = createApp({
+    logout: () => {
+      logoutCalls += 1;
+      return Promise.resolve();
+    },
+  });
+  const logoutServer = app.listen(0, '127.0.0.1');
+  await new Promise<void>((resolve) => logoutServer.once('listening', resolve));
+  const address = logoutServer.address();
+  assert.ok(address && typeof address !== 'string');
+
+  const response = await fetch(`http://127.0.0.1:${address.port}/auth/logout`, {
+    method: 'POST',
+  });
+
+  logoutServer.close();
+  assert.equal(response.status, 204);
+  assert.equal(logoutCalls, 0);
+  assert.match(response.headers.get('set-cookie') ?? '', /^session=;/);
 });
 
 void test('POST /auth/login returns a generic error for invalid credentials', async () => {
