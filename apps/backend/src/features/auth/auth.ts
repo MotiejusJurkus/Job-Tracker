@@ -5,9 +5,14 @@ import { z } from 'zod';
 import type { Database } from '../../db/client.js';
 import { sessions, users } from '../../db/schema.js';
 import { verifyPassword } from '../users/password.js';
-import { createSessionCredentials } from './session.js';
-
-export const SESSION_COOKIE_NAME = 'session';
+import {
+  type AuthenticateSession,
+  createRequireAuth,
+} from './require-auth.js';
+import {
+  createSessionCredentials,
+  SESSION_COOKIE_NAME,
+} from './session.js';
 
 const DUMMY_PASSWORD_HASH = `scrypt:${Buffer.alloc(16).toString('base64')}:${Buffer.alloc(64).toString('base64')}`;
 
@@ -77,41 +82,61 @@ export const createDatabaseLogin =
   };
 
 export const createAuthRouter = (
-  login: Login,
+  login: Login | undefined,
+  authenticateSession: AuthenticateSession | undefined,
   { isSecureCookie = false }: RouterOptions = {},
 ): Router => {
   const router = Router();
 
-  router.post('/login', async (request, response) => {
-    response.set('Cache-Control', 'no-store');
+  if (login !== undefined) {
+    router.post('/login', async (request, response) => {
+      response.set('Cache-Control', 'no-store');
 
-    const input = loginSchema.safeParse(request.body);
+      const input = loginSchema.safeParse(request.body);
 
-    if (!input.success) {
-      response.status(400).json({ error: 'Invalid login request' });
-      return;
-    }
-
-    try {
-      const result = await login(input.data);
-
-      if (result === undefined) {
-        response.status(401).json({ error: 'Invalid username or password' });
+      if (!input.success) {
+        response.status(400).json({ error: 'Invalid login request' });
         return;
       }
 
-      response.cookie(SESSION_COOKIE_NAME, result.sessionToken, {
-        expires: result.expiresAt,
-        httpOnly: true,
-        path: '/',
-        sameSite: 'lax',
-        secure: isSecureCookie,
-      });
-      response.status(200).json({ user: result.user });
-    } catch {
-      response.status(500).json({ error: 'Unable to log in' });
-    }
-  });
+      try {
+        const result = await login(input.data);
+
+        if (result === undefined) {
+          response.status(401).json({ error: 'Invalid username or password' });
+          return;
+        }
+
+        response.cookie(SESSION_COOKIE_NAME, result.sessionToken, {
+          expires: result.expiresAt,
+          httpOnly: true,
+          path: '/',
+          sameSite: 'lax',
+          secure: isSecureCookie,
+        });
+        response.status(200).json({ user: result.user });
+      } catch {
+        response.status(500).json({ error: 'Unable to log in' });
+      }
+    });
+  }
+
+  if (authenticateSession !== undefined) {
+    router.get(
+      '/session',
+      createRequireAuth(authenticateSession),
+      (_request, response) => {
+        const user = response.locals.user;
+
+        if (user === undefined) {
+          response.status(500).json({ error: 'Unable to authenticate session' });
+          return;
+        }
+
+        response.status(200).json({ user });
+      },
+    );
+  }
 
   return router;
 };
