@@ -3,6 +3,7 @@ import 'dotenv/config';
 import { createApp } from "./app.js";
 import { getConfig } from "./config.js";
 import { createDatabase } from './db/client.js';
+import { createDatabaseLogin } from './features/auth/auth.js';
 import { createDatabaseUser } from './features/users/users.js';
 
 const config = getConfig(process.env);
@@ -12,6 +13,8 @@ await checkConnection();
 
 const app = createApp({
   createUser: (input) => createDatabaseUser(database, input),
+  isSecureCookie: process.env.NODE_ENV === 'production',
+  login: createDatabaseLogin(database),
 });
 
 app.listen(config.port, () => {
