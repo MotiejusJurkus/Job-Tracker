@@ -1,4 +1,7 @@
 export const en = {
+  msg_logout_submit: 'Log out',
+  msg_logout_submitting: 'Logging out…',
+  msg_logout_error: 'Unable to log out. Please try again.',
   msg_login_title: 'Welcome back',
   msg_login_subtitle: 'Log in to continue to your job tracker.',
   msg_login_username: 'Username',
@@ -8,6 +11,9 @@ export const en = {
   msg_login_password_required: 'Enter your password.',
   msg_login_password_invalid: 'Enter a valid password.',
   msg_login_submit: 'Log in',
+  msg_login_submitting: 'Logging in…',
+  msg_login_success: 'Logged in successfully.',
+  msg_login_error: 'Unable to log in. Please try again.',
   msg_login_no_account: "Don't have an account?",
   msg_login_signup_link: 'Sign up',
   msg_signup_title: 'Create your account',
