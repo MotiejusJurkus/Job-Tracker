@@ -3,6 +3,8 @@ import { z } from 'zod';
 
 import { publicApi } from '@/core/utils/api';
 
+import type { CreateUserInput } from './schema';
+
 const userSchema = z.object({
   id: z.string(),
   username: z.string(),
@@ -11,11 +13,6 @@ const userSchema = z.object({
 
 const createUserResponseSchema = z.object({ user: userSchema });
 const errorResponseSchema = z.object({ error: z.string() });
-
-export type CreateUserInput = {
-  username: string;
-  password: string;
-};
 
 export const createUser = async (input: CreateUserInput) => {
   try {

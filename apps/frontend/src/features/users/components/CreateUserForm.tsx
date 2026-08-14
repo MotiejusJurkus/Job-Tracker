@@ -6,11 +6,19 @@ import { Controller, useForm } from 'react-hook-form';
 import { Button } from '@/core/components/ui/button';
 import { useTranslation } from '@/core/i18n/use-translation';
 
-import { createUser, type CreateUserInput } from '../users';
-
-const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,30}$/;
-const PASSWORD_MIN_LENGTH = 8;
-const PASSWORD_MAX_LENGTH = 128;
+import {
+  type CreateUserInput,
+  maxLengthRule,
+  minLengthRule,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  requiredRule,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+  validateRules,
+  validUsernameRule,
+} from '../schema';
+import { createUser } from '../users';
 
 type SubmissionStatus =
   { status: 'idle' } | { status: 'success'; message: string } | { status: 'error'; message: string };
@@ -53,11 +61,12 @@ export const CreateUserForm = () => {
         name="username"
         control={form.control}
         rules={{
-          required: t('msg_create_user_username_required'),
-          pattern: {
-            value: USERNAME_PATTERN,
-            message: t('msg_create_user_username_invalid'),
-          },
+          validate: validateRules(
+            requiredRule(t('msg_create_user_username_required')),
+            minLengthRule(USERNAME_MIN_LENGTH, t('msg_create_user_username_invalid')),
+            maxLengthRule(USERNAME_MAX_LENGTH, t('msg_create_user_username_invalid')),
+            validUsernameRule(t('msg_create_user_username_invalid')),
+          ),
         }}
         render={({ field, fieldState }) => (
           <div className="space-y-2">
@@ -88,15 +97,11 @@ export const CreateUserForm = () => {
         name="password"
         control={form.control}
         rules={{
-          required: t('msg_create_user_password_required'),
-          minLength: {
-            value: PASSWORD_MIN_LENGTH,
-            message: t('msg_create_user_password_invalid'),
-          },
-          maxLength: {
-            value: PASSWORD_MAX_LENGTH,
-            message: t('msg_create_user_password_invalid'),
-          },
+          validate: validateRules(
+            requiredRule(t('msg_create_user_password_required')),
+            minLengthRule(PASSWORD_MIN_LENGTH, t('msg_create_user_password_invalid')),
+            maxLengthRule(PASSWORD_MAX_LENGTH, t('msg_create_user_password_invalid')),
+          ),
         }}
         render={({ field, fieldState }) => (
           <div className="space-y-2">
