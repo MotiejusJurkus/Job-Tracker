@@ -53,6 +53,11 @@ export const jobApplicationSchema = z.object({
   updatedAt: z.iso.datetime(),
 });
 
+export const jobApplicationRecordSchema = jobApplicationSchema.extend({
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
 export const createJobApplicationResponseSchema = z.object({
   application: jobApplicationSchema,
 });
@@ -65,3 +70,6 @@ export type CreateJobApplicationInput = z.infer<
   typeof createJobApplicationSchema
 >;
 export type JobApplication = z.infer<typeof jobApplicationSchema>;
+export type JobApplicationRecord = z.infer<
+  typeof jobApplicationRecordSchema
+>;
