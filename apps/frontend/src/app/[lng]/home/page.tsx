@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { getTranslations } from '@/core/i18n/get-translations';
 import { getSafeLng } from '@/core/i18n/language';
 import { LogoutButton } from '@/features/auth/components/LogoutButton';
-import { AddJobApplicationModal } from '@/features/job-applications/components/AddJobApplicationModal';
+import { AddJobApplicationButton } from '@/features/job-applications/components/AddJobApplicationButton';
 import { JobApplicationsList } from '@/features/job-applications/components/JobApplicationsList';
 import { listJobApplications } from '@/features/job-applications/job-applications';
 
@@ -27,7 +27,7 @@ const HomePage = async ({ params }: Props) => {
             <p className="mt-2 text-muted-foreground">{t.msg_job_application_page_subtitle}</p>
           </div>
           <div className="flex items-center gap-3">
-            <AddJobApplicationModal />
+            <AddJobApplicationButton />
             <LogoutButton />
           </div>
         </header>
