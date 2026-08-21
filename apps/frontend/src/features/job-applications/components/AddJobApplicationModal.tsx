@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 
 import { Button } from '@/core/components/ui/button';
@@ -10,15 +11,21 @@ import { CreateJobApplicationForm } from './CreateJobApplicationForm';
 
 export const AddJobApplicationModal = () => {
   const { t } = useTranslation();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
   }, []);
 
+  const handleSuccess = useCallback(() => {
+    setIsOpen(false);
+    router.refresh();
+  }, [router]);
+
   return (
     <>
-      <Button type="button" size="lg" onClick={() => setIsOpen(true)}>
+      <Button type="button" onClick={() => setIsOpen(true)}>
         {t('msg_job_application_open_modal')}
       </Button>
       <Modal
@@ -28,7 +35,7 @@ export const AddJobApplicationModal = () => {
         title={t('msg_job_application_modal_title')}
         description={t('msg_job_application_modal_description')}
       >
-        <CreateJobApplicationForm onSuccess={handleClose} />
+        <CreateJobApplicationForm onSuccess={handleSuccess} />
       </Modal>
     </>
   );

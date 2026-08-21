@@ -19,6 +19,12 @@ const createJobApplicationResponseSchema = z.object({
   }),
 });
 
+const listJobApplicationsResponseSchema = z.object({
+  applications: z.array(createJobApplicationResponseSchema.shape.application),
+});
+
+export type JobApplication = z.infer<typeof createJobApplicationResponseSchema>['application'];
+
 const errorResponseSchema = z.object({ error: z.string() });
 
 export const createJobApplication = async (input: CreateJobApplicationInput) => {
@@ -37,4 +43,19 @@ export const createJobApplication = async (input: CreateJobApplicationInput) => 
 
     throw error;
   }
+};
+
+export const listJobApplications = async (cookieHeader: string) => {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/job-applications`, {
+    headers: { cookie: cookieHeader },
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error('Unable to list job applications');
+  }
+
+  const data: unknown = await response.json();
+
+  return listJobApplicationsResponseSchema.parse(data).applications;
 };
