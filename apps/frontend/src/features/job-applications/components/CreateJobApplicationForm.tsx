@@ -23,6 +23,10 @@ import {
 type SubmissionStatus =
   { status: 'idle' } | { status: 'success'; message: string } | { status: 'error'; message: string };
 
+type Props = {
+  onSuccess?: () => void;
+};
+
 const fieldClassName =
   'w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-shadow placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 aria-invalid:border-destructive aria-invalid:ring-destructive/20';
 
@@ -37,7 +41,7 @@ const statusLabels = {
   withdrawn: 'msg_job_application_status_withdrawn',
 } as const;
 
-export const CreateJobApplicationForm = () => {
+export const CreateJobApplicationForm = ({ onSuccess }: Props) => {
   const { t } = useTranslation();
   const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus>({ status: 'idle' });
 
@@ -59,6 +63,7 @@ export const CreateJobApplicationForm = () => {
       await createJobApplication(values);
       form.reset();
       setSubmissionStatus({ status: 'success', message: t('msg_job_application_success') });
+      onSuccess?.();
     } catch (error) {
       setSubmissionStatus({
         status: 'error',
