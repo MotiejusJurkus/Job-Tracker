@@ -1,22 +1,19 @@
-import { eq } from 'drizzle-orm';
-import { Router } from 'express';
-import { z } from 'zod';
+import { eq } from "drizzle-orm";
+import { Router, type RequestHandler } from "express";
+import { z } from "zod";
 
-import type { Database } from '../../db/client.js';
-import { sessions, users } from '../../db/schema.js';
-import { verifyPassword } from '../users/password.js';
-import type { Logout } from './logout.js';
+import type { Database } from "../../db/client.js";
+import { sessions, users } from "../../db/schema.js";
+import { verifyPassword } from "../users/password.js";
+import type { Logout } from "./logout.js";
 import {
   type AuthenticateSession,
   createRequireAuth,
   readSessionToken,
-} from './require-auth.js';
-import {
-  createSessionCredentials,
-  SESSION_COOKIE_NAME,
-} from './session.js';
+} from "./require-auth.js";
+import { createSessionCredentials, SESSION_COOKIE_NAME } from "./session.js";
 
-const DUMMY_PASSWORD_HASH = `scrypt:${Buffer.alloc(16).toString('base64')}:${Buffer.alloc(64).toString('base64')}`;
+const DUMMY_PASSWORD_HASH = `scrypt:${Buffer.alloc(16).toString("base64")}:${Buffer.alloc(64).toString("base64")}`;
 
 const loginSchema = z.object({
   username: z
@@ -41,6 +38,7 @@ type LoginResult = {
 
 type RouterOptions = {
   isSecureCookie?: boolean;
+  loginRateLimiter?: RequestHandler;
 };
 
 export type Login = (input: LoginInput) => Promise<LoginResult | undefined>;
@@ -87,52 +85,60 @@ export const createAuthRouter = (
   login: Login | undefined,
   authenticateSession: AuthenticateSession | undefined,
   logout: Logout | undefined,
-  { isSecureCookie = false }: RouterOptions = {},
+  { isSecureCookie = false, loginRateLimiter }: RouterOptions = {},
 ): Router => {
   const router = Router();
 
   if (login !== undefined) {
-    router.post('/login', async (request, response) => {
-      response.set('Cache-Control', 'no-store');
+    router.post(
+      "/login",
+      loginRateLimiter ?? ((_request, _response, next) => next()),
+      async (request, response) => {
+        response.set("Cache-Control", "no-store");
 
-      const input = loginSchema.safeParse(request.body);
+        const input = loginSchema.safeParse(request.body);
 
-      if (!input.success) {
-        response.status(400).json({ error: 'Invalid login request' });
-        return;
-      }
-
-      try {
-        const result = await login(input.data);
-
-        if (result === undefined) {
-          response.status(401).json({ error: 'Invalid username or password' });
+        if (!input.success) {
+          response.status(400).json({ error: "Invalid login request" });
           return;
         }
 
-        response.cookie(SESSION_COOKIE_NAME, result.sessionToken, {
-          expires: result.expiresAt,
-          httpOnly: true,
-          path: '/',
-          sameSite: 'lax',
-          secure: isSecureCookie,
-        });
-        response.status(200).json({ user: result.user });
-      } catch {
-        response.status(500).json({ error: 'Unable to log in' });
-      }
-    });
+        try {
+          const result = await login(input.data);
+
+          if (result === undefined) {
+            response
+              .status(401)
+              .json({ error: "Invalid username or password" });
+            return;
+          }
+
+          response.cookie(SESSION_COOKIE_NAME, result.sessionToken, {
+            expires: result.expiresAt,
+            httpOnly: true,
+            path: "/",
+            sameSite: "lax",
+            secure: isSecureCookie,
+          });
+          response.status(200).json({ user: result.user });
+        } catch {
+          response.status(500).json({ error: "Unable to log in" });
+        }
+      },
+    );
   }
 
   if (authenticateSession !== undefined) {
     router.get(
-      '/session',
+      "/session",
       createRequireAuth(authenticateSession),
       (_request, response) => {
         const user = response.locals.user;
 
         if (user === undefined) {
-          response.status(500).json({ error: 'Unable to authenticate session' });
+          response
+            .status(500)
+            .json({ error: "Unable to authenticate session" });
           return;
         }
 
@@ -142,8 +148,8 @@ export const createAuthRouter = (
   }
 
   if (logout !== undefined) {
-    router.post('/logout', async (request, response) => {
-      response.set('Cache-Control', 'no-store');
+    router.post("/logout", async (request, response) => {
+      response.set("Cache-Control", "no-store");
 
       const token = readSessionToken(request.headers.cookie);
 
@@ -154,13 +160,13 @@ export const createAuthRouter = (
 
         response.clearCookie(SESSION_COOKIE_NAME, {
           httpOnly: true,
-          path: '/',
-          sameSite: 'lax',
+          path: "/",
+          sameSite: "lax",
           secure: isSecureCookie,
         });
         response.status(204).end();
       } catch {
-        response.status(500).json({ error: 'Unable to log out' });
+        response.status(500).json({ error: "Unable to log out" });
       }
     });
   }
