@@ -200,19 +200,7 @@ export const JobApplicationListItem = ({ application }: Props) => {
         aria-label={t('msg_job_application_view_details').replace('{{company}}', application.companyName)}
         onClick={handleOpen}
       />
-      <div className="pointer-events-none relative z-1 min-w-0">
-        <p className="truncate font-medium">{application.companyName}</p>
-        {application.jobUrl && (
-          <a
-            className="pointer-events-auto mt-1 inline-block text-sm text-primary hover:underline"
-            href={application.jobUrl}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {t('msg_job_application_view_posting')}
-          </a>
-        )}
-      </div>
+      <p className="pointer-events-none relative z-1 min-w-0 truncate font-medium">{application.companyName}</p>
       <p className="pointer-events-none relative z-1 min-w-0 truncate text-sm md:text-base">
         {application.positionTitle}
       </p>
