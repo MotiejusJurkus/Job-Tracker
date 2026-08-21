@@ -5,6 +5,7 @@ import {
   createJobApplicationSchema,
   createJobApplicationResponseSchema,
   listJobApplicationsResponseSchema,
+  updateJobApplicationSchema,
 } from '../src/features/job-applications/schema.js';
 
 void test('createJobApplicationSchema parses a complete application', () => {
@@ -25,6 +26,18 @@ void test('createJobApplicationSchema parses a complete application', () => {
     jobUrl: 'https://example.com/jobs/123',
     notes: 'Referred by Alex',
   });
+});
+
+void test('updateJobApplicationSchema accepts partial input and rejects empty input', () => {
+  assert.deepEqual(
+    updateJobApplicationSchema.parse({ companyName: '  Updated Inc.  ' }),
+    { companyName: 'Updated Inc.' },
+  );
+  assert.equal(updateJobApplicationSchema.safeParse({}).success, false);
+  assert.equal(
+    updateJobApplicationSchema.safeParse({ userId: 'another-user' }).success,
+    false,
+  );
 });
 
 void test('createJobApplicationSchema applies defaults and normalizes blank optional fields', () => {

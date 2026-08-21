@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 
@@ -13,6 +13,8 @@ import {
   type CreateJobApplicationInput,
   type JobApplicationRecord,
   jobApplicationRecordSchema,
+  updateJobApplicationSchema,
+  type UpdateJobApplicationInput,
 } from './schema.js';
 
 const jobApplicationSelection = {
@@ -35,6 +37,17 @@ export type CreateJobApplication = (
 export type ListJobApplications = (
   userId: string,
 ) => Promise<JobApplicationRecord[]>;
+
+export type UpdateJobApplication = (
+  userId: string,
+  applicationId: string,
+  input: UpdateJobApplicationInput,
+) => Promise<JobApplicationRecord | undefined>;
+
+export type DeleteJobApplication = (
+  userId: string,
+  applicationId: string,
+) => Promise<boolean>;
 
 export const createDatabaseJobApplication = async (
   database: Database,
@@ -74,10 +87,52 @@ export const listDatabaseJobApplications = async (
   return jobApplicationRecordSchema.array().parse(applications);
 };
 
+export const updateDatabaseJobApplication = async (
+  database: Database,
+  userId: string,
+  applicationId: string,
+  input: UpdateJobApplicationInput,
+): Promise<JobApplicationRecord | undefined> => {
+  const [application] = await database
+    .update(jobApplications)
+    .set(input)
+    .where(
+      and(
+        eq(jobApplications.id, applicationId),
+        eq(jobApplications.userId, userId),
+      ),
+    )
+    .returning(jobApplicationSelection);
+
+  return application === undefined
+    ? undefined
+    : jobApplicationRecordSchema.parse(application);
+};
+
+export const deleteDatabaseJobApplication = async (
+  database: Database,
+  userId: string,
+  applicationId: string,
+): Promise<boolean> => {
+  const deleted = await database
+    .delete(jobApplications)
+    .where(
+      and(
+        eq(jobApplications.id, applicationId),
+        eq(jobApplications.userId, userId),
+      ),
+    )
+    .returning({ id: jobApplications.id });
+
+  return deleted.length > 0;
+};
+
 export const createJobApplicationsRouter = (
   authenticateSession: AuthenticateSession,
   createJobApplication: CreateJobApplication,
   listJobApplications: ListJobApplications,
+  updateJobApplication: UpdateJobApplication,
+  deleteJobApplication: DeleteJobApplication,
 ): Router => {
   const router = Router();
 
@@ -122,6 +177,72 @@ export const createJobApplicationsRouter = (
       response.status(200).json({ applications });
     } catch {
       response.status(500).json({ error: 'Unable to list job applications' });
+    }
+  });
+
+  router.patch('/:applicationId', async (request, response) => {
+    const user = response.locals.user;
+
+    if (user === undefined) {
+      response.status(500).json({ error: 'Unable to authenticate session' });
+      return;
+    }
+
+    const applicationId = z.uuid().safeParse(request.params.applicationId);
+    const input = updateJobApplicationSchema.safeParse(request.body);
+
+    if (!applicationId.success || !input.success) {
+      response.status(400).json({
+        error: 'Invalid job application',
+        details: input.success ? {} : z.flattenError(input.error).fieldErrors,
+      });
+      return;
+    }
+
+    try {
+      const application = await updateJobApplication(
+        user.id,
+        applicationId.data,
+        input.data,
+      );
+
+      if (application === undefined) {
+        response.status(404).json({ error: 'Job application not found' });
+        return;
+      }
+
+      response.status(200).json({ application });
+    } catch {
+      response.status(500).json({ error: 'Unable to update job application' });
+    }
+  });
+
+  router.delete('/:applicationId', async (request, response) => {
+    const user = response.locals.user;
+
+    if (user === undefined) {
+      response.status(500).json({ error: 'Unable to authenticate session' });
+      return;
+    }
+
+    const applicationId = z.uuid().safeParse(request.params.applicationId);
+
+    if (!applicationId.success) {
+      response.status(400).json({ error: 'Invalid job application ID' });
+      return;
+    }
+
+    try {
+      const isDeleted = await deleteJobApplication(user.id, applicationId.data);
+
+      if (!isDeleted) {
+        response.status(404).json({ error: 'Job application not found' });
+        return;
+      }
+
+      response.status(204).send();
+    } catch {
+      response.status(500).json({ error: 'Unable to delete job application' });
     }
   });
 

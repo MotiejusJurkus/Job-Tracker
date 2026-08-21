@@ -8,7 +8,9 @@ import { createDatabaseLogout } from './features/auth/logout.js';
 import { createDatabaseAuthenticateSession } from './features/auth/require-auth.js';
 import {
   createDatabaseJobApplication,
+  deleteDatabaseJobApplication,
   listDatabaseJobApplications,
+  updateDatabaseJobApplication,
 } from './features/job-applications/job-applications.js';
 import { createDatabaseUser } from './features/users/users.js';
 
@@ -22,11 +24,15 @@ const app = createApp({
   createJobApplication: (userId, input) =>
     createDatabaseJobApplication(database, userId, input),
   createUser: (input) => createDatabaseUser(database, input),
+  deleteJobApplication: (userId, applicationId) =>
+    deleteDatabaseJobApplication(database, userId, applicationId),
   isSecureCookie: process.env.NODE_ENV === 'production',
   listJobApplications: (userId) =>
     listDatabaseJobApplications(database, userId),
   login: createDatabaseLogin(database),
   logout: createDatabaseLogout(database),
+  updateJobApplication: (userId, applicationId, input) =>
+    updateDatabaseJobApplication(database, userId, applicationId, input),
 });
 
 app.listen(config.port, () => {

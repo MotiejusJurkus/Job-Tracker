@@ -6,7 +6,9 @@ import type { AuthenticateSession } from './features/auth/require-auth.js';
 import {
   type CreateJobApplication,
   createJobApplicationsRouter,
+  type DeleteJobApplication,
   type ListJobApplications,
+  type UpdateJobApplication,
 } from './features/job-applications/job-applications.js';
 import { createUsersRouter, type CreateUser } from './features/users/users.js';
 
@@ -14,20 +16,24 @@ type Props = {
   authenticateSession?: AuthenticateSession;
   createJobApplication?: CreateJobApplication;
   createUser?: CreateUser;
+  deleteJobApplication?: DeleteJobApplication;
   isSecureCookie?: boolean;
   listJobApplications?: ListJobApplications;
   login?: Login;
   logout?: Logout;
+  updateJobApplication?: UpdateJobApplication;
 };
 
 export const createApp = ({
   authenticateSession,
   createJobApplication,
   createUser,
+  deleteJobApplication,
   isSecureCookie,
   listJobApplications,
   login,
   logout,
+  updateJobApplication,
 }: Props = {}) => {
   const app = express();
 
@@ -47,7 +53,9 @@ export const createApp = ({
   if (
     authenticateSession !== undefined &&
     createJobApplication !== undefined &&
-    listJobApplications !== undefined
+    listJobApplications !== undefined &&
+    updateJobApplication !== undefined &&
+    deleteJobApplication !== undefined
   ) {
     app.use(
       '/job-applications',
@@ -55,6 +63,8 @@ export const createApp = ({
         authenticateSession,
         createJobApplication,
         listJobApplications,
+        updateJobApplication,
+        deleteJobApplication,
       ),
     );
   }
