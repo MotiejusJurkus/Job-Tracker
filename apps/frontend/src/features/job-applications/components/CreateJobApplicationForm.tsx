@@ -6,7 +6,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { Button } from '@/core/components/ui/button';
 import { useTranslation } from '@/core/i18n/use-translation';
 
-import { createJobApplication } from '../job-applications';
+import { createJobApplication, type JobApplication, updateJobApplication } from '../job-applications';
 import {
   COMPANY_NAME_MAX_LENGTH,
   type CreateJobApplicationInput,
@@ -24,6 +24,8 @@ type SubmissionStatus =
   { status: 'idle' } | { status: 'success'; message: string } | { status: 'error'; message: string };
 
 type Props = {
+  application?: JobApplication;
+  onBack?: () => void;
   onSuccess?: () => void;
 };
 
@@ -41,18 +43,18 @@ const statusLabels = {
   withdrawn: 'msg_job_application_status_withdrawn',
 } as const;
 
-export const CreateJobApplicationForm = ({ onSuccess }: Props) => {
+export const CreateJobApplicationForm = ({ application, onBack, onSuccess }: Props) => {
   const { t } = useTranslation();
   const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus>({ status: 'idle' });
 
   const form = useForm<CreateJobApplicationInput>({
     defaultValues: {
-      companyName: '',
-      positionTitle: '',
-      status: 'applied',
-      appliedAt: '',
-      jobUrl: '',
-      notes: '',
+      companyName: application?.companyName ?? '',
+      positionTitle: application?.positionTitle ?? '',
+      status: application?.status ?? 'applied',
+      appliedAt: application?.appliedAt ?? '',
+      jobUrl: application?.jobUrl ?? '',
+      notes: application?.notes ?? '',
     },
   });
 
@@ -60,9 +62,16 @@ export const CreateJobApplicationForm = ({ onSuccess }: Props) => {
     setSubmissionStatus({ status: 'idle' });
 
     try {
-      await createJobApplication(values);
+      if (application === undefined) {
+        await createJobApplication(values);
+      } else {
+        await updateJobApplication(application.id, values);
+      }
       form.reset();
-      setSubmissionStatus({ status: 'success', message: t('msg_job_application_success') });
+      setSubmissionStatus({
+        status: 'success',
+        message: t(application === undefined ? 'msg_job_application_success' : 'msg_job_application_update_success'),
+      });
       onSuccess?.();
     } catch (error) {
       setSubmissionStatus({
@@ -233,9 +242,21 @@ export const CreateJobApplicationForm = ({ onSuccess }: Props) => {
         </p>
       )}
 
-      <Button type="submit" disabled={form.formState.isSubmitting}>
-        {form.formState.isSubmitting ? t('msg_job_application_submitting') : t('msg_job_application_submit')}
-      </Button>
+      <div className="flex items-center justify-between gap-3">
+        {onBack ? (
+          <Button type="button" variant="outline" onClick={onBack}>
+            <span aria-hidden="true">←</span>
+            {t('msg_job_application_back_to_details')}
+          </Button>
+        ) : (
+          <span />
+        )}
+        <Button type="submit" disabled={form.formState.isSubmitting}>
+          {form.formState.isSubmitting
+            ? t('msg_job_application_submitting')
+            : t(application === undefined ? 'msg_job_application_submit' : 'msg_job_application_update_submit')}
+        </Button>
+      </div>
     </form>
   );
 };

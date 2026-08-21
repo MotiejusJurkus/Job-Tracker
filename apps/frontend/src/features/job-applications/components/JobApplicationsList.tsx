@@ -3,19 +3,12 @@ import type { Language } from '@/core/i18n/language';
 
 import type { JobApplication } from '../job-applications';
 
+import { JobApplicationListItem } from './JobApplicationListItem';
+
 type Props = {
   applications: JobApplication[];
   lng: Language;
 };
-
-const statusLabels = {
-  wishlist: 'msg_job_application_status_wishlist',
-  applied: 'msg_job_application_status_applied',
-  interviewing: 'msg_job_application_status_interviewing',
-  offer: 'msg_job_application_status_offer',
-  rejected: 'msg_job_application_status_rejected',
-  withdrawn: 'msg_job_application_status_withdrawn',
-} as const;
 
 export const JobApplicationsList = ({ applications, lng }: Props) => {
   const t = getTranslations(lng);
@@ -40,33 +33,7 @@ export const JobApplicationsList = ({ applications, lng }: Props) => {
 
       <ul className="divide-y">
         {applications.map((application) => (
-          <li
-            key={application.id}
-            className="grid gap-3 px-5 py-5 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1.5fr)_minmax(7rem,0.8fr)_minmax(7rem,0.8fr)] md:items-center md:gap-6 md:px-6"
-          >
-            <div className="min-w-0">
-              <p className="truncate font-medium">{application.companyName}</p>
-              {application.jobUrl && (
-                <a
-                  className="mt-1 inline-block text-sm text-primary hover:underline"
-                  href={application.jobUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {t.msg_job_application_view_posting}
-                </a>
-              )}
-            </div>
-            <p className="min-w-0 truncate text-sm md:text-base">{application.positionTitle}</p>
-            <div>
-              <span className="inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-medium">
-                {t[statusLabels[application.status]]}
-              </span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {application.appliedAt ?? t.msg_job_application_date_not_set}
-            </p>
-          </li>
+          <JobApplicationListItem key={application.id} application={application} />
         ))}
       </ul>
     </div>
