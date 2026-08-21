@@ -30,16 +30,26 @@ const nullableAppliedAtSchema = z
 
 export const jobApplicationStatusSchema = z.enum(JOB_APPLICATION_STATUSES);
 
-export const createJobApplicationSchema = z
+const jobApplicationInputSchema = z
   .object({
     companyName: z.string().trim().min(1).max(COMPANY_NAME_MAX_LENGTH),
     positionTitle: z.string().trim().min(1).max(POSITION_TITLE_MAX_LENGTH),
-    status: jobApplicationStatusSchema.default('applied'),
+    status: jobApplicationStatusSchema,
     appliedAt: nullableAppliedAtSchema,
     jobUrl: nullableJobUrlSchema,
     notes: nullableNotesSchema,
   })
   .strict();
+
+export const createJobApplicationSchema = jobApplicationInputSchema.extend({
+  status: jobApplicationStatusSchema.default('applied'),
+});
+
+export const updateJobApplicationSchema = jobApplicationInputSchema
+  .partial()
+  .refine((input) => Object.keys(input).length > 0, {
+    message: 'At least one field is required',
+  });
 
 export const jobApplicationSchema = z.object({
   id: z.uuid(),
@@ -62,12 +72,17 @@ export const createJobApplicationResponseSchema = z.object({
   application: jobApplicationSchema,
 });
 
+export const updateJobApplicationResponseSchema = createJobApplicationResponseSchema;
+
 export const listJobApplicationsResponseSchema = z.object({
   applications: z.array(jobApplicationSchema),
 });
 
 export type CreateJobApplicationInput = z.infer<
   typeof createJobApplicationSchema
+>;
+export type UpdateJobApplicationInput = z.infer<
+  typeof updateJobApplicationSchema
 >;
 export type JobApplication = z.infer<typeof jobApplicationSchema>;
 export type JobApplicationRecord = z.infer<
