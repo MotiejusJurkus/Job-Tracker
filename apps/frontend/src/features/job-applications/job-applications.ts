@@ -45,6 +45,36 @@ export const createJobApplication = async (input: CreateJobApplicationInput) => 
   }
 };
 
+const handleMutationError = (error: unknown): never => {
+  if (isAxiosError(error)) {
+    const result = errorResponseSchema.safeParse(error.response?.data);
+
+    if (result.success) {
+      throw new Error(result.data.error);
+    }
+  }
+
+  throw error;
+};
+
+export const updateJobApplication = async (applicationId: string, input: CreateJobApplicationInput) => {
+  try {
+    const { data } = await api.patch<unknown>(`/job-applications/${applicationId}`, input);
+
+    return createJobApplicationResponseSchema.parse(data).application;
+  } catch (error) {
+    return handleMutationError(error);
+  }
+};
+
+export const deleteJobApplication = async (applicationId: string) => {
+  try {
+    await api.delete(`/job-applications/${applicationId}`);
+  } catch (error) {
+    handleMutationError(error);
+  }
+};
+
 export const listJobApplications = async (cookieHeader: string) => {
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/job-applications`, {
     headers: { cookie: cookieHeader },
