@@ -1,18 +1,18 @@
-import 'dotenv/config';
+import "dotenv/config";
 
 import { createApp } from "./app.js";
 import { getConfig } from "./config.js";
-import { createDatabase } from './db/client.js';
-import { createDatabaseLogin } from './features/auth/auth.js';
-import { createDatabaseLogout } from './features/auth/logout.js';
-import { createDatabaseAuthenticateSession } from './features/auth/require-auth.js';
+import { createDatabase } from "./db/client.js";
+import { createDatabaseLogin } from "./features/auth/auth.js";
+import { createDatabaseLogout } from "./features/auth/logout.js";
+import { createDatabaseAuthenticateSession } from "./features/auth/require-auth.js";
 import {
   createDatabaseJobApplication,
   deleteDatabaseJobApplication,
   listDatabaseJobApplications,
   updateDatabaseJobApplication,
-} from './features/job-applications/job-applications.js';
-import { createDatabaseUser } from './features/users/users.js';
+} from "./features/job-applications/job-applications.js";
+import { createDatabaseUser } from "./features/users/users.js";
 
 const config = getConfig(process.env);
 const { database, checkConnection } = createDatabase(config.databaseUrl);
@@ -26,7 +26,8 @@ const app = createApp({
   createUser: (input) => createDatabaseUser(database, input),
   deleteJobApplication: (userId, applicationId) =>
     deleteDatabaseJobApplication(database, userId, applicationId),
-  isSecureCookie: process.env.NODE_ENV === 'production',
+  frontendOrigin: config.frontendOrigin,
+  isSecureCookie: process.env.NODE_ENV === "production",
   listJobApplications: (userId) =>
     listDatabaseJobApplications(database, userId),
   login: createDatabaseLogin(database),
