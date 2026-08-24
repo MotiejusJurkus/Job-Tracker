@@ -1,11 +1,11 @@
-import { Router } from 'express';
-import { z } from 'zod';
+import { Router } from "express";
+import { z } from "zod";
 
-import type { Database } from '../../db/client.js';
-import { users } from '../../db/schema.js';
-import { hashPassword } from './password.js';
+import type { Database } from "../../db/client.js";
+import { users } from "../../db/schema.js";
+import { hashPassword } from "./password.js";
 
-const createUserSchema = z.object({
+export const createUserSchema = z.object({
   username: z
     .string()
     .trim()
@@ -15,7 +15,7 @@ const createUserSchema = z.object({
   password: z.string().min(8).max(128),
 });
 
-type CreateUserInput = z.infer<typeof createUserSchema>;
+export type CreateUserInput = z.infer<typeof createUserSchema>;
 
 type UserResponse = {
   id: string;
@@ -44,27 +44,27 @@ export const createDatabaseUser = async (
     });
 
   if (user === undefined) {
-    throw new Error('User insert did not return a row');
+    throw new Error("User insert did not return a row");
   }
 
   return user;
 };
 
-const isUniqueViolation = (error: unknown): boolean =>
-  typeof error === 'object' &&
+export const isUniqueViolation = (error: unknown): boolean =>
+  typeof error === "object" &&
   error !== null &&
-  'code' in error &&
-  error.code === '23505';
+  "code" in error &&
+  error.code === "23505";
 
 export const createUsersRouter = (createUser: CreateUser): Router => {
   const router = Router();
 
-  router.post('/', async (request, response) => {
+  router.post("/", async (request, response) => {
     const result = createUserSchema.safeParse(request.body);
 
     if (!result.success) {
       response.status(400).json({
-        error: 'Invalid username or password',
+        error: "Invalid username or password",
         details: z.flattenError(result.error).fieldErrors,
       });
       return;
@@ -75,11 +75,11 @@ export const createUsersRouter = (createUser: CreateUser): Router => {
       response.status(201).json({ user });
     } catch (error) {
       if (isUniqueViolation(error)) {
-        response.status(409).json({ error: 'Username is already taken' });
+        response.status(409).json({ error: "Username is already taken" });
         return;
       }
 
-      response.status(500).json({ error: 'Unable to create user' });
+      response.status(500).json({ error: "Unable to create user" });
     }
   });
 

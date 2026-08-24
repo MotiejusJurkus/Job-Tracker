@@ -3,6 +3,7 @@ import { after, before, test } from "node:test";
 
 import { createApp } from "../src/app.js";
 import type { Login } from "../src/features/auth/auth.js";
+import type { Signup } from "../src/features/auth/signup.js";
 
 const EXPIRES_AT = new Date("2026-09-13T12:00:00.000Z");
 const SESSION_TOKEN = "a".repeat(43);
@@ -11,6 +12,7 @@ const FRONTEND_ORIGIN = "http://localhost:3000";
 let server: ReturnType<ReturnType<typeof createApp>["listen"]>;
 let baseUrl: string;
 let receivedPassword: string | undefined;
+let receivedSignupPassword: string | undefined;
 let receivedSessionToken: string | undefined;
 let revokedSessionToken: string | undefined;
 
@@ -26,6 +28,23 @@ const login: Login = (input) => {
     expiresAt: EXPIRES_AT,
   });
 };
+
+const signup: Signup = (input) => {
+  receivedSignupPassword = input.password;
+
+  return Promise.resolve({
+    user: {
+      id: "826b452c-d84f-42f1-8438-e7774d8e4b49",
+      username: input.username,
+    },
+    sessionToken: SESSION_TOKEN,
+    expiresAt: EXPIRES_AT,
+  });
+};
+
+class UniqueViolationError extends Error {
+  readonly code = "23505";
+}
 
 before(async () => {
   const app = createApp({
@@ -43,6 +62,7 @@ before(async () => {
       revokedSessionToken = token;
       return Promise.resolve();
     },
+    signup,
   });
 
   await new Promise<void>((resolve) => {
@@ -52,6 +72,66 @@ before(async () => {
   const address = server.address();
   assert.ok(address && typeof address !== "string");
   baseUrl = `http://127.0.0.1:${address.port}`;
+});
+
+void test("POST /auth/signup creates an account and secure session cookie", async () => {
+  const response = await fetch(`${baseUrl}/auth/signup`, {
+    method: "POST",
+    headers: { "content-type": "application/json", origin: FRONTEND_ORIGIN },
+    body: JSON.stringify({ username: "New_User", password: "secret12" }),
+  });
+  const body: unknown = await response.json();
+  const cookie = response.headers.get("set-cookie");
+
+  assert.equal(response.status, 201);
+  assert.equal(receivedSignupPassword, "secret12");
+  assert.deepEqual(body, {
+    user: {
+      id: "826b452c-d84f-42f1-8438-e7774d8e4b49",
+      username: "New_User",
+    },
+  });
+  assert.match(cookie ?? "", new RegExp(`^session=${SESSION_TOKEN};`));
+  assert.match(cookie ?? "", /HttpOnly/);
+  assert.match(cookie ?? "", /Secure/);
+  assert.match(cookie ?? "", /SameSite=Lax/);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.doesNotMatch(JSON.stringify(body), /password|token/i);
+});
+
+void test("POST /auth/signup requires an eight-character password", async () => {
+  const response = await fetch(`${baseUrl}/auth/signup`, {
+    method: "POST",
+    headers: { "content-type": "application/json", origin: FRONTEND_ORIGIN },
+    body: JSON.stringify({ username: "New_User", password: "shorter" }),
+  });
+
+  assert.equal(response.status, 400);
+});
+
+void test("POST /auth/signup rejects a duplicate username without setting a cookie", async () => {
+  const app = createApp({
+    signup: () => Promise.reject(new UniqueViolationError()),
+  });
+  const duplicateServer = app.listen(0, "127.0.0.1");
+  await new Promise<void>((resolve) =>
+    duplicateServer.once("listening", resolve),
+  );
+  const address = duplicateServer.address();
+  assert.ok(address && typeof address !== "string");
+
+  const response = await fetch(`http://127.0.0.1:${address.port}/auth/signup`, {
+    method: "POST",
+    headers: { "content-type": "application/json", origin: FRONTEND_ORIGIN },
+      body: JSON.stringify({ username: "Existing_User", password: "secret12" }),
+  });
+
+  duplicateServer.close();
+  assert.equal(response.status, 409);
+  assert.deepEqual(await response.json(), {
+    error: "Username is already taken",
+  });
+  assert.equal(response.headers.get("set-cookie"), null);
 });
 
 after(async () => {

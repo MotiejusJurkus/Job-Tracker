@@ -1,10 +1,11 @@
 import { eq } from "drizzle-orm";
-import { Router, type RequestHandler } from "express";
+import { Router, type RequestHandler, type Response } from "express";
 import { z } from "zod";
 
 import type { Database } from "../../db/client.js";
 import { sessions, users } from "../../db/schema.js";
 import { verifyPassword } from "../users/password.js";
+import { createUserSchema, isUniqueViolation } from "../users/users.js";
 import type { Logout } from "./logout.js";
 import {
   type AuthenticateSession,
@@ -12,6 +13,7 @@ import {
   readSessionToken,
 } from "./require-auth.js";
 import { createSessionCredentials, SESSION_COOKIE_NAME } from "./session.js";
+import type { Signup } from "./signup.js";
 
 const DUMMY_PASSWORD_HASH = `scrypt:${Buffer.alloc(16).toString("base64")}:${Buffer.alloc(64).toString("base64")}`;
 
@@ -39,6 +41,7 @@ type LoginResult = {
 type RouterOptions = {
   isSecureCookie?: boolean;
   loginRateLimiter?: RequestHandler;
+  signupRateLimiter?: RequestHandler;
 };
 
 export type Login = (input: LoginInput) => Promise<LoginResult | undefined>;
@@ -83,11 +86,64 @@ export const createDatabaseLogin =
 
 export const createAuthRouter = (
   login: Login | undefined,
+  signup: Signup | undefined,
   authenticateSession: AuthenticateSession | undefined,
   logout: Logout | undefined,
-  { isSecureCookie = false, loginRateLimiter }: RouterOptions = {},
+  {
+    isSecureCookie = false,
+    loginRateLimiter,
+    signupRateLimiter,
+  }: RouterOptions = {},
 ): Router => {
   const router = Router();
+
+  const setSessionCookie = (
+    response: Response,
+    sessionToken: string,
+    expiresAt: Date,
+  ) => {
+    response.cookie(SESSION_COOKIE_NAME, sessionToken, {
+      expires: expiresAt,
+      httpOnly: true,
+      path: "/",
+      sameSite: "lax",
+      secure: isSecureCookie,
+    });
+  };
+
+  if (signup !== undefined) {
+    router.post(
+      "/signup",
+      signupRateLimiter ?? ((_request, _response, next) => next()),
+      async (request, response) => {
+        response.set("Cache-Control", "no-store");
+
+        const input = createUserSchema.safeParse(request.body);
+
+        if (!input.success) {
+          response.status(400).json({
+            error: "Invalid username or password",
+            details: z.flattenError(input.error).fieldErrors,
+          });
+          return;
+        }
+
+        try {
+          const result = await signup(input.data);
+
+          setSessionCookie(response, result.sessionToken, result.expiresAt);
+          response.status(201).json({ user: result.user });
+        } catch (error) {
+          if (isUniqueViolation(error)) {
+            response.status(409).json({ error: "Username is already taken" });
+            return;
+          }
+
+          response.status(500).json({ error: "Unable to create account" });
+        }
+      },
+    );
+  }
 
   if (login !== undefined) {
     router.post(
@@ -113,13 +169,7 @@ export const createAuthRouter = (
             return;
           }
 
-          response.cookie(SESSION_COOKIE_NAME, result.sessionToken, {
-            expires: result.expiresAt,
-            httpOnly: true,
-            path: "/",
-            sameSite: "lax",
-            secure: isSecureCookie,
-          });
+          setSessionCookie(response, result.sessionToken, result.expiresAt);
           response.status(200).json({ user: result.user });
         } catch {
           response.status(500).json({ error: "Unable to log in" });
