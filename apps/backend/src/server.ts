@@ -6,6 +6,7 @@ import { createDatabase } from "./db/client.js";
 import { createDatabaseLogin } from "./features/auth/auth.js";
 import { createDatabaseLogout } from "./features/auth/logout.js";
 import { createDatabaseAuthenticateSession } from "./features/auth/require-auth.js";
+import { createDatabaseSignup } from "./features/auth/signup.js";
 import {
   createDatabaseJobApplication,
   deleteDatabaseJobApplication,
@@ -32,6 +33,7 @@ const app = createApp({
     listDatabaseJobApplications(database, userId),
   login: createDatabaseLogin(database),
   logout: createDatabaseLogout(database),
+  signup: createDatabaseSignup(database),
   updateJobApplication: (userId, applicationId, input) =>
     updateDatabaseJobApplication(database, userId, applicationId, input),
 });

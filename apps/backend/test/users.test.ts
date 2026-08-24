@@ -46,12 +46,12 @@ void test("POST /users creates a user without returning the password", async () 
   const response = await fetch(`${baseUrl}/users`, {
     method: "POST",
     headers: { "content-type": "application/json", origin: FRONTEND_ORIGIN },
-    body: JSON.stringify({ username: "New_User", password: "secret123" }),
+    body: JSON.stringify({ username: "New_User", password: "secret12" }),
   });
   const body: unknown = await response.json();
 
   assert.equal(response.status, 201);
-  assert.equal(receivedPassword, "secret123");
+  assert.equal(receivedPassword, "secret12");
   assert.deepEqual(body, {
     user: {
       id: "2b4f7374-f7ee-45f9-a8aa-a434f5341a5f",
@@ -86,7 +86,7 @@ void test("POST /users returns a conflict for an existing username", async () =>
   const response = await fetch(`http://127.0.0.1:${address.port}/users`, {
     method: "POST",
     headers: { "content-type": "application/json", origin: FRONTEND_ORIGIN },
-    body: JSON.stringify({ username: "existing", password: "secret123" }),
+    body: JSON.stringify({ username: "existing", password: "secret12" }),
   });
 
   duplicateServer.close();

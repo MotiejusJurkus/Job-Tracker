@@ -6,6 +6,7 @@ import helmet from "helmet";
 import { createAuthRouter, type Login } from "./features/auth/auth.js";
 import type { Logout } from "./features/auth/logout.js";
 import type { AuthenticateSession } from "./features/auth/require-auth.js";
+import type { Signup } from "./features/auth/signup.js";
 import {
   type CreateJobApplication,
   createJobApplicationsRouter,
@@ -38,6 +39,7 @@ type Props = {
   listJobApplications?: ListJobApplications;
   login?: Login;
   logout?: Logout;
+  signup?: Signup;
   updateJobApplication?: UpdateJobApplication;
 };
 
@@ -51,6 +53,7 @@ export const createApp = ({
   listJobApplications,
   login,
   logout,
+  signup,
   updateJobApplication,
 }: Props = {}) => {
   const app = express();
@@ -102,16 +105,23 @@ export const createApp = ({
 
   if (
     login !== undefined ||
+    signup !== undefined ||
     authenticateSession !== undefined ||
     logout !== undefined
   ) {
     app.use(
       "/auth",
-      createAuthRouter(login, authenticateSession, logout, {
+      createAuthRouter(login, signup, authenticateSession, logout, {
         isSecureCookie,
         loginRateLimiter: rateLimit({
           windowMs: AUTH_RATE_LIMIT_WINDOW_MS,
           limit: LOGIN_RATE_LIMIT_MAX,
+          standardHeaders: "draft-8",
+          legacyHeaders: false,
+        }),
+        signupRateLimiter: rateLimit({
+          windowMs: AUTH_RATE_LIMIT_WINDOW_MS,
+          limit: SIGNUP_RATE_LIMIT_MAX,
           standardHeaders: "draft-8",
           legacyHeaders: false,
         }),

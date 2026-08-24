@@ -11,7 +11,7 @@ const VALID_LOGIN = JSON.stringify({
 });
 const VALID_USER = JSON.stringify({
   username: "New_User",
-  password: "secret123",
+  password: "secret12",
 });
 
 let server: ReturnType<ReturnType<typeof createApp>["listen"]>;
@@ -27,6 +27,15 @@ before(async () => {
       }),
     frontendOrigin: FRONTEND_ORIGIN,
     login: () => Promise.resolve(undefined),
+    signup: (input) =>
+      Promise.resolve({
+        user: {
+          id: "826b452c-d84f-42f1-8438-e7774d8e4b49",
+          username: input.username,
+        },
+        sessionToken: "a".repeat(43),
+        expiresAt: new Date("2026-09-21T12:00:00.000Z"),
+      }),
   });
 
   await new Promise<void>((resolve) => {
@@ -125,7 +134,7 @@ void test("signup attempts are rate limited", async () => {
 
   for (let attempt = 0; attempt < 11; attempt += 1) {
     responses.push(
-      await fetch(`${baseUrl}/users`, {
+      await fetch(`${baseUrl}/auth/signup`, {
         method: "POST",
         headers: {
           "content-type": "application/json",
