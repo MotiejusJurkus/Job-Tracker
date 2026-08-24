@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 import { getTranslations } from '@/core/i18n/get-translations';
 import { getSafeLng } from '@/core/i18n/language';
@@ -16,7 +17,13 @@ const HomePage = async ({ params }: Props) => {
   const safeLng = getSafeLng(lng);
   const t = getTranslations(safeLng);
   const cookieStore = await cookies();
-  const applications = await listJobApplications(cookieStore.toString());
+  const result = await listJobApplications(cookieStore.toString());
+
+  if (result.status === 'unauthenticated') {
+    redirect(`/${safeLng}/login`);
+  }
+
+  const { applications } = result;
 
   return (
     <main className="min-h-screen bg-muted px-4 py-8 sm:px-6 sm:py-10">

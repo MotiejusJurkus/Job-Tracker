@@ -81,11 +81,18 @@ export const listJobApplications = async (cookieHeader: string) => {
     cache: 'no-store',
   });
 
+  if (response.status === 401) {
+    return { status: 'unauthenticated' } as const;
+  }
+
   if (!response.ok) {
     throw new Error('Unable to list job applications');
   }
 
   const data: unknown = await response.json();
 
-  return listJobApplicationsResponseSchema.parse(data).applications;
+  return {
+    status: 'success',
+    applications: listJobApplicationsResponseSchema.parse(data).applications,
+  } as const;
 };
