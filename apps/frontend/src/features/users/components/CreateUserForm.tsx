@@ -1,9 +1,11 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { Button } from '@/core/components/ui/button';
+import { useLanguage } from '@/core/hooks/use-language';
 import { useTranslation } from '@/core/i18n/use-translation';
 
 import {
@@ -18,16 +20,17 @@ import {
   validateRules,
   validUsernameRule,
 } from '../schema';
-import { createUser } from '../users';
+import { signup } from '../users';
 
-type SubmissionStatus =
-  { status: 'idle' } | { status: 'success'; message: string } | { status: 'error'; message: string };
+type SubmissionStatus = { status: 'idle' } | { status: 'error'; message: string };
 
 const inputClassName =
   'h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-shadow placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 aria-invalid:border-destructive aria-invalid:ring-destructive/20';
 
 export const CreateUserForm = () => {
   const { t } = useTranslation();
+  const lng = useLanguage();
+  const router = useRouter();
   const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus>({ status: 'idle' });
 
   const form = useForm<CreateUserInput>({
@@ -38,9 +41,8 @@ export const CreateUserForm = () => {
     setSubmissionStatus({ status: 'idle' });
 
     try {
-      await createUser(values);
-      form.reset();
-      setSubmissionStatus({ status: 'success', message: t('msg_create_user_success') });
+      await signup(values);
+      router.replace(`/${lng}/home`);
     } catch (error) {
       setSubmissionStatus({
         status: 'error',
@@ -129,11 +131,6 @@ export const CreateUserForm = () => {
         )}
       />
 
-      {submissionStatus.status === 'success' && (
-        <p role="status" className="text-sm text-success">
-          {submissionStatus.message}
-        </p>
-      )}
       {submissionStatus.status === 'error' && (
         <p role="alert" className="text-sm text-destructive">
           {submissionStatus.message}

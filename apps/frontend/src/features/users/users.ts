@@ -8,17 +8,16 @@ import type { CreateUserInput } from './schema';
 const userSchema = z.object({
   id: z.string(),
   username: z.string(),
-  createdAt: z.iso.datetime(),
 });
 
-const createUserResponseSchema = z.object({ user: userSchema });
+const signupResponseSchema = z.object({ user: userSchema });
 const errorResponseSchema = z.object({ error: z.string() });
 
-export const createUser = async (input: CreateUserInput) => {
+export const signup = async (input: CreateUserInput) => {
   try {
-    const { data } = await publicApi.post<unknown>('/users', input);
+    const { data } = await publicApi.post<unknown>('/auth/signup', input);
 
-    return createUserResponseSchema.parse(data).user;
+    return signupResponseSchema.parse(data).user;
   } catch (error) {
     if (isAxiosError(error)) {
       const result = errorResponseSchema.safeParse(error.response?.data);
